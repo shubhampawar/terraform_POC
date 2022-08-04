@@ -2,6 +2,7 @@ stages:
   - validate
   - plan
   - apply
+  - destroy
 image:
   name: hashicorp/terraform:light
   entrypoint:
@@ -19,9 +20,9 @@ validate:
   stage: validate
   script:
     - terraform validate
-  except:
-    refs:
-    - main
+  only:
+    - branches
+  
 
 plan:
   stage: plan
@@ -29,13 +30,10 @@ plan:
     - terraform plan -out "planfile"
   dependencies:
     - validate
-  only:
-    refs:
-      main
   artifacts:
     paths:
       - planfile
-
+  
 
 apply:
   stage: apply
@@ -44,3 +42,17 @@ apply:
   dependencies:
     - plan
   when: manual
+  only:
+    - main
+
+destroy:
+  stage: destroy
+  script:
+    - echo "Destroying resources"
+    - terraform destroy -state=$STATE --auto-approve
+  dependencies:
+    - apply  
+  when: manual
+  only:
+    refs:
+      - main
